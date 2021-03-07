@@ -45,11 +45,12 @@ class Menu:
       """
     self.login_menu= """
                                                       MENU
-                                            --------------------------        
-                                            |  1. Login as Student   |
-                                            |  2. Login as Admin     |
-                                            |  3. Exit portal        |
-                                            --------------------------
+                                            ---------------------------------
+                                            |  1. Sign up(only for student) |
+                                            |  2. Login as Student          |
+                                            |  3. Login as Admin            |
+                                            |  4. Exit portal               |
+                                            --------------------------------
       """
 
   def login(self):
@@ -57,28 +58,44 @@ class Menu:
     print(self.login_menu)
     user_inp = int(input("Enter your choice: "))
     
-    while (user_inp > 3 or user_inp < 1):
+    while (user_inp > 4 or user_inp < 1):
         user_inp = int(input("Invalid. Enter your choice again: "))
+        
     self.user = user_inp
-    if self.user!=3:
-        self.username = input("Enter user name: ")
-        mydata.set_userinfo(self.user, self.username)
-        print(f"\n Welcome, {self.username.capitalize()}!")
+    
+    if user_inp==1:
+        mydata.student_sign_up()
+    
+    if user_inp==2 :
+        global name
+        name = input("Enter user name: ")
+        mydata.set_userinfo(2,name)
+        print(f"\n Welcome, {name.capitalize()}!")
+        correct_pswd = mydata.check_pswd(name)
+        if(correct_pswd==1):
+            self.menu_for_student()
+        else:
+            print("Sorry wrong password! ")
+            Menu.login(self)
         time.sleep(2)
+    if user_inp ==3:
+        mydata.set_userinfo(3,"admin")
         
   def menu_for_student(self):
     clear() 
     choice= None 
     while(choice!=7):
-        print(self.student_menu)
-        choice= int(input("Enter your choice: "))
+        if mydata.flag==0:
+            print(self.student_menu)
+            choice= int(input("Enter your choice: "))
+        else:
+            choice=7
         while(choice>7 or choice <1):
             choice = int(input("Invalid. Enter your choice again: "))
-
-        
         if choice!=7:
             clear()
-            mydata.student_options[choice-1](mydata)    
+            mydata.student_options[choice-1](mydata) 
+    
       
     return
     # self.login()

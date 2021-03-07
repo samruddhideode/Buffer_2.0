@@ -1,13 +1,19 @@
 from allotment_mechanism import * 
 from csv import * 
+import time
 
 mymachine= Allotment_machanism()
+
 user= None
 username= None
+pswd = ""
+name=""
+
 
 class Data:
       
     def __init__(self):
+        self.flag = 0
         self.vacancies={"Computer": 120, "IT": 60, "Mechanical": 60, "Electronics": 120}
 
         self.available_branches = ["Computer", "IT", "Mechanical", "Electronics"]
@@ -38,9 +44,10 @@ class Data:
     """
 
     def set_userinfo(self, usr, usrnm):
-        global user, username
+        global user, name
         user = usr
-        username = usrnm
+        name = usrnm
+        print(user, name)
 
 
     def view_seatmatrix(self):
@@ -49,11 +56,12 @@ class Data:
         
 
     def find_record(self, name):
+        #print(name)
         with open("datasheet.csv",'r') as f:
             reader_object = reader(f)
             for row in reader_object:
                 if(row[0]==name):
-                    return 1
+                    return reader_object.line_num, row[8]
         return 0 
     
     def register(self):
@@ -138,34 +146,53 @@ class Data:
 
     def edit_record(self):
         #allow only if allotment is not yet done
-        if self.find_record(username):
+        global name
+        row_to_edit, pswd = self.find_record(name)
+        if row_to_edit>0:
             if mymachine.allotment_done== True:
                 print("Cannot Edit record now. Your allotment result is: ")
                 # print allotment result
             else:
-                #print("edit your record here") 
-                name = input("Enter your name: ")
+                print("edit your record here") 
                 with open("datasheet.csv",'r') as f:
-                    reader_object = reader(f)
-                    for row in reader_object:
-                        if(row[0]==name):
-                            to_edit= int(input(edit_menu))s
-                            row[to_edit+2]= input("Enter new value:")
-                            
-                            
-                print()
+                    lines= f.read().splitlines()
+                    
+                    surname="xyz"
+                    marks = input("Enter marks: ")
+                    email = input("Enter email: ")
+                    pref1 = input("Enter pref1: ")
+                    pref2 = input("Enter pref2: ")
+                    pref3 = input("Enter pref3: ")
+                    allotment = "--"
+                    lines[row_to_edit-1]=f"{name},{surname},{email},{marks},{pref1},{pref2},{pref3},'--',{pswd}"
+                    
+                with open("datasheet.csv",'w') as f:
+                    # overwrite
+                    for line in lines:
+                        f.write(line+"\n")
+                    
         else:
             print("Student Record not found. Please register yourself.")           
 
     def delete_record(self):
         #allow only if allotment is not yet done
-        if self.find_record():
+        row_to_edit, pswd = self.find_record(name)
+        if row_to_edit>0:
             if mymachine.allotment_done== True:
                 print("Cannot withdraw the application now. Your allotment result is: ")
             else:
                 confirmation = (input("Do you wish to remove your record permanently? (press 'y'/'n') "))
                 if confirmation == 'y' :
-                    print("Your application was removed from list")    
+                    with open("datasheet.csv",'r') as f:
+                        lines= f.read().splitlines()
+                        del lines[row_to_edit-1]
+                    with open("datasheet.csv",'w') as f:
+                    # overwrite
+                        for line in lines:
+                            f.write(line+"\n")
+                    print("Your application was removed from list")
+                    #print(" PRESS ONLY 7 ")
+                    self.flag=1
                 else:
                     return    
         else:
@@ -187,8 +214,39 @@ class Data:
                 print(f"{key} :\t\t\t{val}")
             else:
                 print(f"{key} :\t\t{val}")
-
+            
     
+    def student_sign_up(self):
+        #print("Student sign up")
+        
+        name = input("Enter Your Name: ")
+        surname=input("Enter your Surname: ")
+        pswd = input(" Set your password: ")
+        
+       
+        with open('datasheet.csv', 'a+', newline='') as f_object: 
+            writer_object = writer(f_object) 
+            email = ""
+            marks = 0
+            pref1 = 0
+            pref2 = 0
+            pref3 = 0
+            allotment = "--"
+            record = [name, surname, email, marks, pref1, pref2, pref3, allotment,pswd]
+            writer_object.writerow(record) 
+            f_object.close()
+        
+        
+    def check_pswd(self, name):
+        #print("Welcome to pswd check",username)
+        password = input("Enter your password: ")
+        with open("datasheet.csv",'r') as f:
+            reader_object = reader(f)
+            for row in reader_object:
+                if(row[0]==name):
+                    if(row[8]==password):
+                        return(1)
+        return 0 
 
     student_options=[view_seatmatrix, register, search_student, edit_record, delete_record, view_cutoff_marks]
     admin_options=[mymachine.run_allotment, view_all_registrations, view_allotment_result, view_branchwise_allotment, search_student, students_without_allotment, vacancies_left]   
