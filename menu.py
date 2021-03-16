@@ -2,7 +2,7 @@ from os import system, name
 from database import *
 import time
 
-mydata= Data()
+mydata= Data() #object of class Data
 
 def clear(): 
     # for windows 
@@ -14,7 +14,6 @@ class Menu:
   def __init__(self):
     
     self.user= None
-    self.username= None
 
     self.student_menu = """
                                                          MENU
@@ -60,61 +59,78 @@ class Menu:
     
     while (user_inp > 4 or user_inp < 1):
         user_inp = int(input("Invalid. Enter your choice again: "))
-        
+
+    # store who is the current user in class var- user.   
     self.user = user_inp
     
     if user_inp==1:
+        # signup for students is selected
+        clear()
         mydata.student_sign_up()
     
     if user_inp==2 :
-        global name
+        # login as student is selected
         name = input("Enter user name: ")
-        mydata.set_userinfo(2,name)
-        print(f"\n Welcome, {name.capitalize()}!")
-        correct_pswd = mydata.check_pswd(name)
-        if(correct_pswd==1):
-            self.menu_for_student()
+        mydata.set_userinfo(2,name) # send user info to database file
+        is_correct_pswd = mydata.check_pswd(name)
+        if(is_correct_pswd==1):  # name and password match
+            print(f"\n Welcome, {name.capitalize()}!")
+            time.sleep(2)
+            return
+        else:
+            # Username or password or both do not match
+            print("Sorry! Incorrect credentials. ") 
+            self.login()
+        
+    if user_inp ==3:
+        # login as admin is selected
+        # (pwd for admin is 12345)
+        pwd= input("Enter password:")
+        if (pwd =="12345"):
+            print("Welcome, Admin!")
+            mydata.set_userinfo(3,"admin") # send user info to database file
+            time.sleep(2)
         else:
             print("Sorry wrong password! ")
-            Menu.login(self)
-        time.sleep(2)
-    if user_inp ==3:
-        mydata.set_userinfo(3,"admin")
-        
+            self.login()
+
+
   def menu_for_student(self):
     clear() 
     choice= None 
-    while(choice!=7):
-        if mydata.flag==0:
+    while(choice!=7): # breaks out of loop when 7 i.e. logout is selected
+        if mydata.flag==0: 
+            # flag=0 indicates user has not withdrawn his application.
             print(self.student_menu)
             choice= int(input("Enter your choice: "))
-        else:
+        else: 
+            # flag=1 is the case where user has withdrawn the application. So we do not show him any other option and force him to logout.
             choice=7
         while(choice>7 or choice <1):
             choice = int(input("Invalid. Enter your choice again: "))
         if choice!=7:
+            # when any choice other than logout is selected, call the corresponding function from the functions list in database.py
             clear()
             mydata.student_options[choice-1](mydata) 
-    
-      
     return
-    # self.login()
+
 
   def menu_for_admin(self):
     clear() 
     choice= None 
-    while(choice!=8):
+    while(choice!=8):  # breaks out of loop when 8 i.e. logout is selected
         print(self.admin_menu)
         choice= int(input("Enter your choice: "))
         while(choice>8 or choice <1):
             choice = int(input("Invalid. Enter your choice again: "))
 
         if choice!=8:
+            # when any choice other than logout is selected, call the corresponding function from the functions list in database.py
             clear()
             if choice!=1:
+                # all functions other than 'run allotment' are present in class Data. They require an object of this class to be passed as parameter.
                 mydata.admin_options[choice-1](mydata)   
             else:
-                mydata.admin_options[0]()    
-        
+                # if choice 1 is selected, this run allotment function is present in a diff class than other functions and hence does not require the object of class Data to be passed as paramenter.
+                mydata.admin_options[0]()      
     return
-    # self.login() 

@@ -1,9 +1,9 @@
 
 from menu import Menu
 
-mymenu= Menu()
+mymenu= Menu()  # obj of class Menu
 
-while(mymenu.user!=4):
+while(mymenu.user!=4):  # end program when option 4 i.e. exit portal is selected.
     mymenu.login()
     if mymenu.user==2:
         mymenu.menu_for_student()
