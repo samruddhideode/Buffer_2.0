@@ -1,23 +1,26 @@
 from allotment_mechanism import * 
 from csv import * 
+import pandas as pd
 import time
 
-mymachine= Allotment_machanism()
+mymachine= Allotment_machanism() #obj of class Allotment_machanism
 
+# details of the user who is currently logged in. Initially set to Null.
 user= None
-username= None
-pswd = ""
 name=""
-
+pwd=None
 
 class Data:
       
     def __init__(self):
-        self.flag = 0
+        self.flag = 0  # flag=1: user has withdrawn his application, record is deleted from datasheet.
+
+        # no. of vacant seats in each branch stored as dict. Initially all seats are vacant. This no. will reduce when each allotment is completed.
         self.vacancies={"Computer": 120, "IT": 60, "Mechanical": 60, "Electronics": 120}
 
         self.available_branches = ["Computer", "IT", "Mechanical", "Electronics"]
 
+        # initially cutoffs for all branches are 0. These mks will be updated after entire allotment process is completed.
         self.cutoff_marks={"Computer": 0, "IT": 0, "Mechanical": 0, "Electronics": 0}
 
         self.seat_matrix= """
@@ -31,6 +34,7 @@ class Data:
     |  4. Electronics    |         120    |
     ---------------------------------------
     """
+
         self.edit_menu= """
                 WHAT DO YOU WANT TO EDIT?
     ---------------------------------------
@@ -44,24 +48,32 @@ class Data:
     """
 
     def set_userinfo(self, usr, usrnm):
+        # sets the info of the currently logged-in user in global variables user and name.
         global user, name
         user = usr
         name = usrnm
-        print(user, name)
-
+        self.flag=0 # set flag to 0 whenever a user logs in.
 
     def view_seatmatrix(self):
+        # print total no. of seats available in each branch of college.
         print(self.seat_matrix)
         
         
 
-    def find_record(self, name):
-        #print(name)
+    def find_record(self, name, pswd= None):
         with open("datasheet.csv",'r') as f:
             reader_object = reader(f)
-            for row in reader_object:
-                if(row[0]==name):
-                    return reader_object.line_num, row[8]
+            if pswd== None:
+                for row in reader_object:
+                    if(row[0]==name):
+                        # return the row no. where record is found, password of that record
+                        return reader_object.line_num, row[8]
+            else:
+                for row in reader_object:
+                    if(row[0]==name) and row[8]==pswd:
+                        # return the row no. where record is found
+                        return reader_object.line_num
+        # if record not found, return 0            
         return 0 
     
     def register(self):
@@ -88,9 +100,7 @@ class Data:
             print("You have registered successfully.")
             # print the student record    
 
-    def view_all_registrations(self):
-        # print table of all records (name, surname, email, marks)
-        print("all registrations list")
+   
 
     def view_allotment_result(self):
         if mymachine.allotment_done== False:
@@ -109,19 +119,34 @@ class Data:
             # filter the result table for the inputted branch and display rank wise (rank, name, surname, email, marks, allotment)
 
     def search_student(self):
-        if user==1:
+        if user==2:
             # for user= student, show only his record.(all columns)
-            name = input("Enter your name: ")
+            srname = input("Enter your surname: ")
+            global name,pwd
             with open("datasheet.csv",'r') as f:
                 reader_object = reader(f)
                 for row in reader_object:
-                    if(row[0]==name):
-                    #print(f"This is the application status of {username}")
-                         print(row)
+                    if(row[0]==name) and row[8]==pwd:
+                        print("Applicant details: ")
+                        for i in range(0,7):
+                            print(row[i], end="   ")
+                        return
+            print("Sorry! No record found")            
             
-        if user==2:
+        if user==3:
             # for user= admin, show details of any student
-            print("input the name of a student to search their details")
+            # print("input the name of a student to search their details")
+            name = input("Enter student name: ")
+            srname= input("Enter student surname: ")
+            with open("datasheet.csv",'r') as f:
+                reader_object = reader(f)
+                for row in reader_object:
+                    if(row[0]==name) and row[1]==srname:
+                        print("Applicant details: ")
+                        for i in range(0,7):
+                            print(row[i], end="   ")
+                        return
+            print("Sorry! No record found")            
             
 
     def get_cutoff_marks(self):
@@ -146,8 +171,8 @@ class Data:
 
     def edit_record(self):
         #allow only if allotment is not yet done
-        global name
-        row_to_edit, pswd = self.find_record(name)
+        global name, pwd
+        row_to_edit = self.find_record(name, pwd)
         if row_to_edit>0:
             if mymachine.allotment_done== True:
                 print("Cannot Edit record now. Your allotment result is: ")
@@ -157,14 +182,16 @@ class Data:
                 with open("datasheet.csv",'r') as f:
                     lines= f.read().splitlines()
                     
-                    surname="xyz"
-                    marks = input("Enter marks: ")
+                    surname=(lines[row_to_edit-1]).split(",")[1]
+                    #surname = input("Enter surname: ")
                     email = input("Enter email: ")
+                    marks = input("Enter marks: ")
+                   
                     pref1 = input("Enter pref1: ")
                     pref2 = input("Enter pref2: ")
                     pref3 = input("Enter pref3: ")
                     allotment = "--"
-                    lines[row_to_edit-1]=f"{name},{surname},{email},{marks},{pref1},{pref2},{pref3},'--',{pswd}"
+                    lines[row_to_edit-1]=f"{name},{surname},{email},{marks},{pref1},{pref2},{pref3},'--',{pwd}"
                     
                 with open("datasheet.csv",'w') as f:
                     # overwrite
@@ -174,15 +201,20 @@ class Data:
         else:
             print("Student Record not found. Please register yourself.")           
 
+
+
     def delete_record(self):
         #allow only if allotment is not yet done
-        row_to_edit, pswd = self.find_record(name)
-        if row_to_edit>0:
-            if mymachine.allotment_done== True:
-                print("Cannot withdraw the application now. Your allotment result is: ")
-            else:
-                confirmation = (input("Do you wish to remove your record permanently? (press 'y'/'n') "))
-                if confirmation == 'y' :
+        if mymachine.allotment_done== True:
+            print(f"Cannot withdraw the application now. Your allotment result is: {self.find_record(name)}")
+        else:    
+            
+            confirmation = (input("Do you wish to remove your record permanently? (press 'y'/'n') "))
+            if confirmation == 'y' :
+                # password= input("Enter your password: ")
+                row_to_edit = self.find_record(name, pwd)
+                if row_to_edit>0:
+        
                     with open("datasheet.csv",'r') as f:
                         lines= f.read().splitlines()
                         del lines[row_to_edit-1]
@@ -191,12 +223,11 @@ class Data:
                         for line in lines:
                             f.write(line+"\n")
                     print("Your application was removed from list")
-                    #print(" PRESS ONLY 7 ")
                     self.flag=1
-                else:
-                    return    
-        else:
-            print("Student Record not found. Please register yourself.")           
+                else: 
+                    return
+            else:
+                print("Student Record not found. Please register yourself.")           
 
 
     def students_without_allotment(self):
@@ -217,25 +248,31 @@ class Data:
             
     
     def student_sign_up(self):
-        #print("Student sign up")
-        
         name = input("Enter Your Name: ")
         surname=input("Enter your Surname: ")
-        pswd = input(" Set your password: ")
         
-       
+        #check whether the person has already signed up
+        with open ('datasheet.csv', 'r') as f_object: 
+            reader_obj= reader(f_object)
+            for row in reader_obj:
+                if row[0]==name and row[1]==surname:
+                    print(f"Account already exists for {name} {surname}.")
+                    return
+
+        # if they havent signed up already, ask them to set password and add a new record. 
+        pswd = input("Set your password: ")
         with open('datasheet.csv', 'a+', newline='') as f_object: 
             writer_object = writer(f_object) 
-            email = ""
+            email = "--"
             marks = 0
-            pref1 = 0
-            pref2 = 0
-            pref3 = 0
+            pref1 = -1
+            pref2 = -1
+            pref3 = -1
             allotment = "--"
             record = [name, surname, email, marks, pref1, pref2, pref3, allotment,pswd]
             writer_object.writerow(record) 
             f_object.close()
-        
+        print("\nYou have signed up successfully!")
         
     def check_pswd(self, name):
         #print("Welcome to pswd check",username)
@@ -243,10 +280,20 @@ class Data:
         with open("datasheet.csv",'r') as f:
             reader_object = reader(f)
             for row in reader_object:
-                if(row[0]==name):
-                    if(row[8]==password):
-                        return(1)
+                if(row[0]==name) and row[8]==password:
+                    global pwd
+                    pwd= password
+                    return(1)
         return 0 
+    
+    #****************ADMIN***********************************************
+    
+    def view_all_registrations(self):
+        # print table of all records (name, surname, email, marks)
+        df = pd.read_csv('datasheet.csv')
+        print(df[["NAME","SURNAME","EMAIL_ID","MARKS"]].to_string(index= False))
+        
+        
 
     student_options=[view_seatmatrix, register, search_student, edit_record, delete_record, view_cutoff_marks]
     admin_options=[mymachine.run_allotment, view_all_registrations, view_allotment_result, view_branchwise_allotment, search_student, students_without_allotment, vacancies_left]   
